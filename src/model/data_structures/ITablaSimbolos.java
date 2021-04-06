@@ -9,4 +9,5 @@ public interface ITablaSimbolos<K extends Comparable<K>,V> {
 	int size ( );
 	ILista<K> keySet();
 	ILista<V> valueSet();
+	int hash(K key);
 }
