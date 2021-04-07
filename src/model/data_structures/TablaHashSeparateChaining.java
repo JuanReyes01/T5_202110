@@ -2,60 +2,143 @@ package model.data_structures;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 
 import jdk.nashorn.internal.runtime.arrays.NumericElements;
 
 public class TablaHashSeparateChaining<K extends Comparable<K>, V> implements ITablaSimbolos <K, V> {
 	
-	private static final int CAPACIDAD_INICIAL = 4;
+	private int n;
+	private int m;
+	private int p;
+    private ArregloDinamico<ArregloDinamico<NodoTS>> tablaHash; 
+    
+    /*
+     * Metodos enviados por el profesor
+     */
+    
+    // Function that returns true if n
+    // is prime else returns false
+    static boolean isPrime(int n)
+    {
+        // Corner cases
+        if (n <= 1) return false;
+        if (n <= 3) return true;   
+        // This is checked so that we can skip
+        // middle five numbers in below loop
+        if (n % 2 == 0 || n % 3 == 0) return false;       
+        for (int i = 5; i * i <= n; i = i + 6)
+            if (n % i == 0 || n % (i + 2) == 0)
+                return false;       
+        return true;
+    }
 
-    private int n;                                // numero de parejas K-V
-    private int m;                                // Tamanio de la tabla hash
-    private TablaSimbolos<K, V>[]  st;  
+    // Function to return the smallest
+    // prime number greater than N
+    static int nextPrime(int N)
+    {   
+        // Base case
+        if (N <= 1)
+            return 2;  
+        int prime = N;
+        boolean found = false;
 
+        // Loop continuously until isPrime returns
+        // true for a number greater than n
+
+        while (!found)
+        {
+            prime++;
+            if (isPrime(prime))
+                found = true;
+        }
+        return prime;
+    }
+   //-----------------------------------------------------------------------------
 
     /**
      * Inicializa una tabla de simbolos vacia.
      */
-    public TablaHashSeparateChaining()  {
-        this(CAPACIDAD_INICIAL);
+    public TablaHashSeparateChaining(int capacidad)  {
+    	n = 0;
+    	m = capacidad;
+    	if(!isPrime(capacidad))
+    		p = nextPrime(capacidad);
+    	tablaHash = new ArregloDinamico<ArregloDinamico<NodoTS>>(capacidad);
+    }
+    
+    public void put(K key, V val) {
+    	int h = hash(key);
+    	if(get(key)==null){
+    		tablaHash.getElement(h).insertElement(new NodoTS<K,V>(key, val),h);
+    	}
+    	else{
+    		for(int i=0; i<tablaHash.getElement(h).size();i++)
+    			if(tablaHash.getElement(h).getElement(i).darLlave().equals(key)){
+//        		if(tablaHash.getElement(h).getElement(i).darValor() instanceof ArregloDinamico){
+//        			tablaHash.getElement(h).getElement(i).darValor().addLast(val);
+//        		}
+//        		else{
+//        		ArregloDinamico<V> n = new ArregloDinamico<V>();
+//        		n.addLast(tablaHash.getElement(h).getElement(i).darValor());
+//        		n.addLast(element);
+    				tablaHash.getElement(h).getElement(i).asignarValor(val);
+    				n++;
+//        		}
+    			}
+    	}
     } 
+    
 
     /**
-     * Inicializa una tabla de simbolos vacia con cadenas.
-     * @param m Numero inicial de cadenas
+     * @param  key la llave a buscar
+     * @return el valor asociado con la llave en la tabal de simbolos, null si no la encuentra
+     * @throws IllegalArgumentException si la llave es null
      */
-    public TablaHashSeparateChaining(int m) {
-        this.m = m;
-        st = (TablaSimbolos<K, V>[]) new TablaSimbolos<>()];
-        for (int i = 0; i < m; i++)
-            st[i] = new TablaSimbolos()<K, V>();
-    } 
-
-    // establece la tabla de hash dependiendo del numero de cadenas
-    private void resize(int chains) {
-        TablaHashSeparateChaining<K, V> temp = new TablaHashSeparateChaining<K, V>(chains);
-        for (int i = 0; i < m; i++) {
-            for (K key : st[i].keySet()) {
-                temp.put(key, st[i].get(key));
-            }
+    public V get(K key) {
+    	if (key == null) throw new IllegalArgumentException("argument to get() is null");
+    	int i = hash(key);
+        ArregloDinamico<NodoTS> lista = tablaHash.getElement(i);
+        for(int j=0; i<lista.size();i++){
+        	if(lista.getElement(j).darLlave().equals(key)){
+        		return (V) lista.getElement(j).darValor();
+        	}
         }
-        this.m  = temp.m;
-        this.n  = temp.n;
-        this.st = temp.st;
+    	return null;
+    } 
+      
+    
+    /**
+     * Borra la llave especifica y su valor asociado de la tabla.    
+     * (si la llave esta en la tabla).  
+     * @param  key la llave a remover
+     * @throws IllegalArgumentException si la llave es null
+     */
+    public V remove(K key) {
+    	int i = hash(key);
+    	ArregloDinamico<NodoTS> lista = tablaHash.getElement(i);
+    	if(get(key)!=null){
+    		for(int j=0; i<lista.size();i++){
+    			if(lista.getElement(j).darLlave().equals(key)){
+    				V b = (V) lista.getElement(j).darValor();
+    				lista.deleteElement(j);
+    				return b;
+    			}
+    		}
+    	}
+    	return null;
     }
+    
 
-    // funcion hash para las llaves - devuelve un valor entre 0 y m-1
-    private int hashTextbook(K key) {
-        return (key.hashCode() & 0x7fffffff) % m;
-    }
-
-    // funcion hash para las llaves - devuelve un valor entre 0 y m-1 (se asume que m es potencia de 2)
-    public int hash(K key) {
-        int h = key.hashCode();
-        h ^= (h >>> 20) ^ (h >>> 12) ^ (h >>> 7) ^ (h >>> 4);
-        return h & (m-1);
-    }
+    /**
+     * @param  key la llave a buscar
+     * @return {@code true si el simbolo contiene la llave};
+     *         {@code false de lo contrario.
+     * @throws IllegalArgumentException si la llave es null
+     */
+    public boolean contains(K key) {
+    	return (get(key)==null)?false:true;
+    } 
 
     /**
      * @return el numero de parejas K-V en la tabla de simbolos.
@@ -73,107 +156,42 @@ public class TablaHashSeparateChaining<K extends Comparable<K>, V> implements IT
         return size() == 0;
     }
 
-    /**
-     * @param  key la llave a buscar
-     * @return {@code true si el simbolo contiene la llave};
-     *         {@code false de lo contrario.
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public boolean contains(K key) {
-        if (key == null) throw new IllegalArgumentException("argument to contains() is null");
-        return get(key) != null;
-    } 
 
-    /**
-     * @param  key la llave a buscar
-     * @return el valor asociado con la llave en la tabal de simbolos, null si no la encuentra
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public V get(K key) {
-        if (key == null) throw new IllegalArgumentException("argument to get() is null");
-        int i = hash(key);
-        return st[i].get(key);
-    } 
 
-    /**
-     * Inserta la dupla de valor-llave en la tabla de simbolos, sobreescribiendo los valores antiguos
-     * si la tabla ya contenia la llave especificada
-     * Borra la llave especifica y su valor asociado de la tabla si el valor especifico en null.
-     * @param  key la llave a ingresar 
-     * @param  val el valor a ingresar
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public void put(K key, V val) {
-        if (key == null) throw new IllegalArgumentException("first argument to put() is null");
-        if (val == null) {
-            remove(key);
-            return;
-        }
-
-        // dobla el tamaño de la lista si el ancho es mayor a 10
-        if (n >= 10*m) resize(2*m);
-
-        int i = hash(key);
-        if (!st[i].contains(key)) n++;
-        st[i].put(key, val);
-    } 
-
-    /**
-     * Borra la llave especifica y su valor asociado de la tabla.    
-     * (si la llave esta en la tabla).  
-     * @param  key la llave a remover
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public V remove(K key) {
-        if (key == null) throw new IllegalArgumentException("argument to delete() is null");
-
-        int i = hash(key);
-        if (st[i].contains(key)) n--;
-        st[i].remove(key);
-
-        //  reduce el tamaño de la lista si el ancho es menor a 2
-        if (m > CAPACIDAD_INICIAL && n <= 2*m) resize(m/2);
-		return (V) st[i];
-    } 
-
-    public Iterable<K> keys() {
-        Queue<K> queue = new Queue<K>();
-        for (int i = 0; i < m; i++) {
-            for (K key : st[i].keySet())
-                ((Object) queue).enqueue(key);
-        }
-        return queue;
+    public ArregloDinamico<K> keySet(){
+    	ArregloDinamico<K> llaves = new ArregloDinamico<K>();
+    	for(int i=0; i<tablaHash.size(); i++){
+    		ArregloDinamico<NodoTS> lista = new ArregloDinamico<NodoTS>();  
+    		for(int j=0; j<lista.size();j++){
+    			llaves.addLast((K) lista.getElement(j).darLlave());
+    		}
+    	}
+    	return llaves;
     } 
 
 
-    /**
-     */
-    public static void main(String[] args) { 
-       TablaHashSeparateChaining<String, Integer> st = new TablaHashSeparateChaining<String, Integer>();
-        for (int i = 0; !StdIn.isEmpty(); i++) {
-            String key = StdIn.readString();
-            st.put(key, i);
-        }
-
-        for (String s : st.keys()) 
-            StdOut.println(s + " " + st.get(s)); 
-
-    }
-
-
-
-	@Override
-	public ILista<K> keySet() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public ILista<V> valueSet() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+		ArregloDinamico<V> value = new ArregloDinamico<V>();
+		for(int i=0; i<tablaHash.size(); i++){
+			ArregloDinamico<NodoTS> lista = new ArregloDinamico<NodoTS>();  
+			for(int j=0; j<lista.size();j++){
+				value.addLast((V) lista.getElement(j).darLlave());
+			}
+		}
+		return value;
+	} 
 
+	
+	@Override
+	public int hash(K key) {
+		int h = hash(key);
+		Random r = new Random();
+		int a = r.nextInt(p-1);
+		int b = r.nextInt(p);
+		return (Math.abs(a*(h)+b)%p)%m;
+	}
 
 }
 

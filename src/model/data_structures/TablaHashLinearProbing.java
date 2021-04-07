@@ -1,234 +1,210 @@
 package model.data_structures;
 
-import java.util.Map;
+import java.util.Random;
 
-import sun.misc.Queue;
+import sun.invoke.empty.Empty;
 
-public class TablaHashLinearProbing<K extends Comparable<K>, V> implements ITablaSimbolos<K, V> {
+public class TablaHashLinearProbing<K extends Comparable<K>, V> implements ITablaSimbolos <K, V>{
+
+	private int n;
+	private int m;
+	private int p;
+	private ArregloDinamico<NodoTS<K,V>> tablaHash; 
+	private NodoTS<K, V> empty;
+
+	/*
+	 * Metodos enviados por el profesor
+	 */
+
+	// Function that returns true if n
+	// is prime else returns false
+	static boolean isPrime(int n)
+	{
+		// Corner cases
+		if (n <= 1) return false;
+		if (n <= 3) return true;   
+		// This is checked so that we can skip
+		// middle five numbers in below loop
+		if (n % 2 == 0 || n % 3 == 0) return false;       
+		for (int i = 5; i * i <= n; i = i + 6)
+			if (n % i == 0 || n % (i + 2) == 0)
+				return false;       
+		return true;
+	}
+
+	// Function to return the smallest
+	// prime number greater than N
+	static int nextPrime(int N)
+	{   
+		// Base case
+		if (N <= 1)
+			return 2;  
+		int prime = N;
+		boolean found = false;
+
+		// Loop continuously until isPrime returns
+		// true for a number greater than n
+
+		while (!found)
+		{
+			prime++;
+			if (isPrime(prime))
+				found = true;
+		}
+		return prime;
+	}
+	//-----------------------------------------------------------------------------
 	
-	// debe ser potencia de 2
-    private static final int CAPACIDAD_INICIAL = 4;
-
-    private int n;           // numero de parejas K-V en la tabla de simbolos
-    private int m;           // tamanio de la tabla linear probing
-    private K[] llaves;      // llaves
-    private V[] valores;    //  valores
-
-
-    /**
-     * Inicializa una tabla de simbolos vacia.
-     */
-    public TablaHashLinearProbing() {
-        this(CAPACIDAD_INICIAL);
-    }
-
-    /**
-     * Inicializa una tabla de simbolos vacia con la capacidad inicial especificada.
-     *
-     * @param capacidad capacidad inicial
-     */
-    public TablaHashLinearProbing(int capacidad) {
-        m = capacidad;
-        n = 0;
-        llaves = (K[])   new Object[m];
-        valores = (V[]) new Object[m];
-    }
-
-    /**
-     * @return el numero de parejas K-V en la tabla de simbolos.
-     */
-    public int size() {
-        return n;
-    }
-
-    /**
-     * @return {@code  true si la tabla de simbolos esta vacia;
-     *         {@code false de lo contrario.
-     */
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    /**
-      /**
-     * @param  key la llave a buscar
-     * @return {@code true si el simbolo contiene la llave};
-     *         {@code false de lo contrario.
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public boolean contains(K key) {
-        if (key == null) throw new IllegalArgumentException("argument to contains() is null");
-        return get(key) != null;
-    }
-
-    // funcion hash para las llaves - devuelve un valor entre 0 y m-1
-    private int hashTextbook(K key) {
-        return (key.hashCode() & 0x7fffffff) % m;
-    }
-
- // funcion hash para las llaves - devuelve un valor entre 0 y m-1 (se asume que m es potencia de 2)
-    public int hash(K key) {
-        int h = key.hashCode();
-        h ^= (h >>> 20) ^ (h >>> 12) ^ (h >>> 7) ^ (h >>> 4);
-        return h & (m-1);
-    }
-
-    // establece la tabla de hash dependiendo de la capacidad.
-    private void resize(int capacidad) {
-       TablaHashLinearProbing<K, V> temp = new TablaHashLinearProbing<K, V>(capacidad);
-        for (int i = 0; i < m; i++) {
-            if (llaves[i] != null) {
-                temp.put(llaves[i], valores[i]);
-            }
-        }
-       llaves = temp.llaves;
-        valores = temp.valores;
-        m    = temp.m;
-    }
-
-    /**
-     * Inserta la dupla de valor-llave en la tabla de simbolos, sobreescribiendo los valores antiguos
-     * si la tabla ya contenia la llave especificada
-     * Borra la llave especifica y su valor asociado de la tabla si el valor especifico en null.
-     * @param  key la llave a ingresar 
-     * @param  val el valor a ingresar
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public void put(K key, V val) {
-        if (key == null) throw new IllegalArgumentException("first argument to put() is null");
-
-        if (val == null) {
-            remove(key);
-            return;
-        }
-
-        // dobla el tamaño de la tabla si ya tiene almenos la mitad llena
-        if (n >= m/2) resize(2*m);
-
-        int i;
-        for (i = hash(key); llaves[i] != null; i = (i + 1) % m) {
-            if (llaves[i].equals(key)) {
-                valores[i] = val;
-                return;
-            }
-        }
-        llaves[i] = key;
-        valores[i] = val;
-        n++;
-    }
-
-    /**
-     * @param  key la llave a buscar
-     * @return el valor asociado con la llave en la tabal de simbolos, null si no la encuentra
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public V get(K key) {
-        if (key == null) throw new IllegalArgumentException("argument to get() is null");
-        for (int i = hash(key); llaves[i] != null; i = (i + 1) % m)
-            if (llaves[i].equals(key))
-                return valores[i];
-        return null;
-    }
-
-    /**
-     * Borra la llave especifica y su valor asociado de la tabla.    
-     * (si la llave esta en la tabla).  
-     * @param  key la llave a remover
-     * @throws IllegalArgumentException si la llave es null
-     */
-    public V remove(K key) {
-        if (key == null) return null ;
-        if (!contains(key)) ;
-
-        // encuentra la posicion de la llave
-        int i = hash(key);
-        while (!key.equals(llaves[i])) {
-            i = (i + 1) % m;
-        }
-
-        // borra la llave y el valor asociado
-        llaves[i] = null;
-        valores[i] = null;
-
-
-        i = (i + 1) % m;
-        while (llaves[i] != null) {
-            // borra llaves[i] y valores[i] y reinserta
-            K   llave = llaves[i];
-            V valor = valores[i];
-            llaves[i] = null;
-            valores[i] = null;
-            n--;
-            put(llave, valor);
-            i = (i + 1) % m;
-        }
-
-        n--;
-
-        // reduce el tamaño de la lista si el factor de carga es mayor a 0.75
-        if (n > 0 && n <= m/8) resize(m/2);
-
-        assert check();
-        return (V) llaves[i];
-    }
-
-    /**
-     * Retorna todas las llaves en la tabla como un iterable.
-     * @return todas las llaves en la tabla de simbolos
-     */
-    public Iterable<K> keys() {
-        Queue<K> queue = new Queue<K>();
-        for (int i = 0; i < m; i++)
-            if (llaves[i] != null) queue.enqueue(llaves[i]);
-        return (Iterable<K>) queue;
-    }
-    
-
-    // check de integridad - no checkear despues de cada put(),
-    // porque la integridad del check no se matiene durante un remove() 
-     
-    private boolean check() {
-
-        // revisa que la tabla esta llena a la mitad
-        if (m < 2*n) {
-            System.err.println("Hash table size m = " + m + "; array size n = " + n);
-            return false;
-        }
-
-        // revisa que cada llave en la tabla se puede encontrar con un get()
-        for (int i = 0; i < m; i++) {
-            if (llaves[i] == null) continue;
-            else if (get(llaves[i]) != valores[i]) {
-                System.err.println("get[" + llaves[i] + "] = " + get(llaves[i]) + "; vals[i] = " + valores[i]);
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static void main(String[] args) { 
-        TablaHashLinearProbing<String, Integer> st = new TablaHashLinearProbing<String, Integer>();
-        for (int i = 0; !StdIn.isEmpty(); i++) {
-            String key = StdIn.readString();
-            st.put(key, i);
-        }
-
-        for (String s : st.keySet()) 
-            StdOut.println(s + " " + st.get(s)); 
-    }
+	public TablaHashLinearProbing(int c) {
+		n = 0;
+		if(!isPrime(c)){
+			p = nextPrime(c); 
+		}
+		else{p = c;}
+		tablaHash = new ArregloDinamico<NodoTS<K, V>>(p);
+	}
 	
+	public void put(K k, V v) {
+		int h = hash(k);
+		NodoTS<K, V> nuevo = new NodoTS<K,V>(k, v);
+		if(tablaHash.getElement(h)==null){
+			tablaHash.insertElement(nuevo, h);
+			n++;
+		}
+		else if(tablaHash.getElement(h) == empty){
+			int aux = h+1;
+			int x = 0;
+			NodoTS<K, V> nodo = tablaHash.getElement(aux);
+			while(nodo!=null){
+				if(nodo == nuevo){
+					tablaHash.insertElement(nuevo, aux);
+					n++;
+					break;
+				}
+				aux++;
+				if(aux>tablaHash.size()) aux = 0;
+				nodo = tablaHash.getElement(aux);
+				x++;
+				if(x>tablaHash.size()) break;
+			}
+			tablaHash.insertElement(nuevo, h);
+		}
+		else if(tablaHash.getElement(h)!=nuevo){
+			int aux = h+1;
+			int x = 0;
+			NodoTS<K, V> nodo = tablaHash.getElement(aux);
+			while(nodo!=null){
+				if(nodo == nuevo){
+					tablaHash.insertElement(nuevo, aux);
+					n++;
+					break;
+				}
+				aux++;
+				if(aux>tablaHash.size()) aux = 0;
+				nodo = tablaHash.getElement(aux);
+				x++;
+				if(x>tablaHash.size()) break;
+			}
+			if(nodo==null){
+				tablaHash.insertElement(nuevo, aux);
+				n++;
+			}
+		}
+	}
 
-	@Override
+	public V get(K k) {
+		int h = hash(k);
+		if(tablaHash.getElement(h).darLlave()==k){
+			return tablaHash.getElement(h).darValor();
+		}
+		else if(tablaHash.getElement(h).darLlave()!=k){
+			int aux = h+1;
+			int x = 0;
+			NodoTS<K, V> nodo = tablaHash.getElement(aux);
+			while(nodo!=null){
+				if(nodo.darLlave()==k){
+					return nodo.darValor();
+				}
+				aux++;
+				if(aux>tablaHash.size()) aux = 0;
+				nodo = tablaHash.getElement(aux);
+				x++;
+				if(x>tablaHash.size()) break;
+			}
+		}
+		return null;
+	}
+
+	public V remove(K k) {
+		int h = hash(k);
+		if(tablaHash.getElement(h).darLlave()==k){
+			V valor = tablaHash.getElement(h).darValor();
+			tablaHash.deleteElement(h);
+			return valor; 
+		}
+		else if(tablaHash.getElement(h).darLlave()!=k){
+			int aux = h+1;
+			int x = 0;
+			NodoTS<K, V> nodo = tablaHash.getElement(aux);
+			while(nodo!=null){
+				if(nodo.darLlave()==k){
+					V valor = tablaHash.getElement(aux).darValor();
+					tablaHash.deleteElement(aux);
+					return valor; 
+				}
+				aux++;
+				if(aux>tablaHash.size()) aux = 0;
+				nodo = tablaHash.getElement(aux);
+				x++;
+				if(x>tablaHash.size()) break;
+			}
+		}
+		return null;
+	}			
+
+	public boolean contains(K k) {
+		return get(k)!=null;
+	}
+
+	public boolean isEmpty() {
+		return n==0;
+	}
+
+	public int size() {
+		return n;
+	}
+
 	public ILista<K> keySet() {
-		// TODO Auto-generated method stub
-		return null;
+		ArregloDinamico<K> llaves = new ArregloDinamico<K>(); 
+		for(int i=1;i<=tablaHash.size();i++){
+			llaves.addLast(tablaHash.getElement(i).darLlave());
+		}
+		return llaves;
+	}
+
+	public ILista<V> valueSet() {
+		ArregloDinamico<V> valores = new ArregloDinamico<V>(); 
+		for(int i=1;i<=tablaHash.size();i++){  
+			valores.addLast(tablaHash.getElement(i).darValor());
+		}
+		return valores;
 	}
 
 	@Override
-	public ILista<V> valueSet() {
-		// TODO Auto-generated method stub
-		return null;
+	public int hash(K key) {
+		int h = hash(key);
+		Random r = new Random();
+		int a = r.nextInt(p-1);
+		int b = r.nextInt(p);
+		return (Math.abs(a*(h)+b)%p)%m;
 	}
-
-
+	
+	public void reHash(){
+		 TablaHashLinearProbing<K, V> nueva = new TablaHashLinearProbing<>(nextPrime(m));
+		 ArregloDinamico<K> llaves = (ArregloDinamico<K>) keySet();
+		 for(int i=0; i<llaves.size();i++){
+			 nueva.put(llaves.getElement(i), get(llaves.getElement(i)));
+		 }
+		 tablaHash = nueva;
+	}
 }
