@@ -11,7 +11,8 @@ public class TablaSimbolos<K extends Comparable<K>, V> implements ITablaSimbolos
 	 * Agrega un elemento nuevo a la tabla 
 	 * Complejidad O(N)
 	 */
-	public void put(K k, V v) {
+	public void put(K k, V v) 
+	 {
 		NodoTS<K,V> nodo = new NodoTS<K,V>(k,v);
 		boolean stop = false;
 		for(int i=1; i<=tabla.size()&&!stop;i++){
@@ -103,5 +104,12 @@ public class TablaSimbolos<K extends Comparable<K>, V> implements ITablaSimbolos
 		}
 		return valores;
 	}
+
+	@Override
+	public int hash(K key) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 
 }
