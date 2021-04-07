@@ -70,10 +70,13 @@ public class Controller {
 					break;
 					
 				case 3:
-					view.printMessage("Realizando Prueba...");
+					view.printMessage("Ingrese: pais, categoria");
 					view.printMessage("El tiempo promedio es: "+modelo.pruebaGet()+" Milisegundos");
 					break;
-				case 4: 
+				case 4:
+					view.printMessage("Pruebas de desempeño");
+					break;
+				case 5: 
 					view.printMessage("--------- \n Hasta pronto !! \n---------"); 
 					lector.close();
 					fin = true;
